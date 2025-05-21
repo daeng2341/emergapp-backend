@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorities Dashboard | Victoria Laguna Emergency</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="/static/admin-styles.css"> 
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                <span>Victoria Emergency</span>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-tab="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li data-tab="map-view">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <span>Map View</span>
+                </li>
+                <li data-tab="emergencies">
+                    <i class="fas fa-ambulance"></i>
+                    <span>Emergencies</span>
+                </li>
+                <li data-tab="responders">
+                    <i class="fas fa-user-md"></i>
+                    <span>Responders</span>
+                </li>
+                <li data-tab="users">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </li>
+                <li data-tab="news">
+                    <i class="fas fa-newspaper"></i>
+                    <span>News & Advisories</span>
+                </li>
+                <li data-tab="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </li>
+                <li data-tab="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </li>
+            </ul>
+                <a href="{{ url_for('logout') }}" class="logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Header Bar -->
+            <div class="top-bar">
+                <div class="search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search emergencies...">
+                </div>
+                <div class="admin-info">
+                    <img src="https://via.placeholder.com/40" alt="Admin">
+                    <span>{{ user.fullname }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="content">
+                <!-- Dashboard Tab (Default) -->
+                <div id="dashboard" class="tab-content active">
+                    <h2>Emergency Dashboard</h2>
+                    <div class="stats-cards">
+                        <div class="card">
+                            <div class="card-icon bg-red">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="card-info">
+                                <h3>{{ active_count }}</h3>
+                                <p>Active Emergencies</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon bg-blue">
+                                <i class="fas fa-ambulance"></i>
+                            </div>
+                            <div class="card-info">
+                                <h3>56</h3>
+                                <p>Responders Available</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon bg-green">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="card-info">
+                                <h3>1,250</h3>
+                                <p>Registered Users</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon bg-orange">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="card-info">
+                                <h3>5</h3>
+                                <p>New Alerts</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Categories -->
+                    <div class="emergency-categories">
+                        <h3>Emergency Categories</h3>
+                        <div class="category-cards">
+                            <div class="category-card" data-category="fire">
+                                <i class="fas fa-fire"></i>
+                                <h4>Fire</h4>
+                                <span class="count">3</span>
+                            </div>
+                            <div class="category-card" data-category="disaster">
+                                <i class="fas fa-house-damage"></i>
+                                <h4>Disaster</h4>
+                                <span class="count">2</span>
+                            </div>
+                            <div class="category-card" data-category="crime">
+                                <i class="fas fa-shield-alt"></i>
+                                <h4>Crime</h4>
+                                <span class="count">4</span>
+                            </div>
+                            <div class="category-card" data-category="help">
+                                <i class="fas fa-hands-helping"></i>
+                                <h4>Help</h4>
+                                <span class="count">1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Emergencies Table -->
+                    <div class="recent-emergencies">
+                        <h3>Recent Emergency Cases</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Case ID</th>
+                                    <th>Type</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Time</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for emergency in emergencies %}
+                                <tr>
+                                    <td>#EMG-{{ emergency.id }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if emergency.type == 'Fire' %}badge-red
+                                            {% elif emergency.type == 'Disaster' %}badge-orange
+                                            {% elif emergency.type == 'Crime' %}badge-purple
+                                            {% elif emergency.type == 'Help' %}badge-blue
+                                            {% else %}badge-gray{% endif %}">
+                                            {{ emergency.type }}
+                                        </span>
+                                    </td>
+                                    <td>{{ emergency.location }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if emergency.status == 'Active' %}badge-red
+                                            {% elif emergency.status == 'In Progress' %}badge-orange
+                                            {% elif emergency.status == 'Resolved' %}badge-green
+                                            {% else %}badge-gray{% endif %}">
+                                            {{ emergency.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ emergency.created_at.strftime('%I:%M %p') }}</td>
+                                    <td>
+                                        <button class="btn-view" onclick="viewEmergency('{{ emergency.id }}')">View</button>
+                                        <button class="btn-route" onclick="showRoute('{{ emergency.id }}')">Route</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Map View Tab -->
+                <div id="map-view" class="tab-content">
+                    <h2>Emergency Map View</h2>
+                    <div id="emergency-map"></div>
+                    <div class="map-controls">
+                        <button class="btn-filter" data-filter="all">All</button>
+                        <button class="btn-filter" data-filter="fire">Fire</button>
+                        <button class="btn-filter" data-filter="disaster">Disaster</button>
+                        <button class="btn-filter" data-filter="crime">Crime</button>
+                        <button class="btn-filter" data-filter="help">Help</button>
+                    </div>
+                    </div>
+
+                <!-- Other Tabs -->
+                <div id="emergencies" class="tab-content">
+                    <h2>Manage Emergencies</h2>
+                    <div class="emergency-filters">
+                        <select id="status-filter">
+                            <option value="all">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="resolved">Resolved</option>
+                        </select>
+                        <select id="type-filter">
+                            <option value="all">All Types</option>
+                            <option value="fire">Fire</option>
+                            <option value="disaster">Disaster</option>
+                            <option value="crime">Crime</option>
+                            <option value="help">Help</option>
+                        </select>
+                    </div>
+                    <div class="emergency-list">
+                        <!-- Emergency list will be populated dynamically -->
+                    </div>
+                </div>
+
+                <div id="responders" class="tab-content">
+                    <h2>Responder Management</h2>
+                    
+                    <!-- Department Tabs -->
+                    <div class="department-tabs">
+                        <button class="tab-btn active" data-dept="all">All Departments</button>
+                        <button class="tab-btn" data-dept="PNP">PNP</button>
+                        <button class="tab-btn" data-dept="BFP">BFP</button>
+                        <button class="tab-btn" data-dept="EMS">EMS</button>
+                        <button class="tab-btn" data-dept="MDRRMO">MDRRMO</button>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="responder-actions">
+                        <button class="btn-add" onclick="showAddResponderForm()">Add Responder</button>
+                        <button class="btn-schedule" onclick="showDutyScheduleForm()">Schedule Duty</button>
+                        <button class="btn-report" onclick="showReportForm()">Generate Report</button>
+                    </div>
+
+                    <!-- Search and Filter -->
+                    <div class="responder-filters">
+                        <input type="text" id="responder-search" placeholder="Search responders...">
+                        <select id="status-filter">
+                            <option value="all">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        <input type="date" id="date-filter">
+                    </div>
+
+                    <!-- Responders List -->
+                    <div class="responders-grid">
+                        <!-- Will be populated dynamically -->
+                    </div>
+
+                    <!-- Duty Schedule Table -->
+                    <div class="duty-schedule">
+                        <h3>Today's Duty Schedule</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Name</th>
+                                    <th>Shift</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Will be populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="users" class="tab-content">
+                    <h2>User Management</h2>
+                    <div class="user-list">
+                        <!-- User list will be populated dynamically -->
+                </div>
+                </div>
+
+                <div id="reports" class="tab-content">
+                    <h2>Analytics & Reports</h2>
+                    <div class="report-filters">
+                        <select id="report-type">
+                            <option value="daily">Daily Report</option>
+                            <option value="weekly">Weekly Report</option>
+                            <option value="monthly">Monthly Report</option>
+                        </select>
+                        <input type="date" id="report-date">
+                    </div>
+                    <div class="report-content">
+                        <!-- Report content will be populated dynamically -->
+                    </div>
+                </div>
+
+                <div id="settings" class="tab-content">
+                    <h2>System Settings</h2>
+                    <div class="settings-grid">
+                        <!-- Settings options will be populated dynamically -->
+                    </div>
+                </div>
+
+                <div id="news" class="tab-content">
+                    <h2>News & Advisories</h2>
+                    <div class="news-advisory-container">
+                        <!-- News Section -->
+                        <div class="news-section">
+                            <h3>News Management</h3>
+                            <button class="btn-add" onclick="showNewsForm()">Add News</button>
+                            <div class="news-list">
+                                <!-- News items will be populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Advisories Section -->
+                        <div class="advisory-section">
+                            <h3>Advisories</h3>
+                            <button class="btn-add" onclick="showAdvisoryForm()">Create Advisory</button>
+                            <div class="advisory-list">
+                                <!-- Advisories will be populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- News Form Modal -->
+                <div id="news-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3>Add News</h3>
+                        <form id="news-form" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="news-title">Title</label>
+                                <input type="text" id="news-title" name="title" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="news-content">Content</label>
+                                <textarea id="news-content" name="content" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="news-image">Image</label>
+                                <input type="file" id="news-image" name="image" accept="image/*">
+                                <div id="news-image-preview" class="image-preview"></div>
+                            </div>
+                            <button type="submit" class="btn-submit">Publish News</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Advisory Form Modal -->
+                <div id="advisory-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3>Create Advisory</h3>
+                        <form id="advisory-form" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="advisory-title">Title</label>
+                                <input type="text" id="advisory-title" name="title" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="advisory-content">Content</label>
+                                <textarea id="advisory-content" name="content" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="advisory-type">Type</label>
+                                <select id="advisory-type" name="type" required>
+                                    <option value="advisory">Advisory</option>
+                                    <option value="news">News</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="advisory-priority">Priority</label>
+                                <select id="advisory-priority" name="priority" required>
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="advisory-image">Image</label>
+                                <input type="file" id="advisory-image" name="image" accept="image/*">
+                                <div id="advisory-image-preview" class="image-preview"></div>
+                            </div>
+                            <button type="submit" class="btn-submit">Publish Advisory</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Add Responder Modal -->
+                <div id="responder-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3>Add Responder</h3>
+                        <form id="responder-form">
+                            <div class="form-group">
+                                <label for="department">Department</label>
+                                <select id="department" name="department_id" required>
+                                    <option value="">Select Department</option>
+                                    <option value="1">PNP</option>
+                                    <option value="2">BFP</option>
+                                    <option value="3">EMS</option>
+                                    <option value="4">MDRRMO</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="first-name">First Name</label>
+                                <input type="text" id="first-name" name="first_name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="last-name">Last Name</label>
+                                <input type="text" id="last-name" name="last_name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="rank">Rank</label>
+                                <input type="text" id="rank" name="rank">
+                            </div>
+                            <div class="form-group">
+                                <label for="position">Position</label>
+                                <input type="text" id="position" name="position">
+                            </div>
+                            <div class="form-group">
+                                <label for="contact">Contact Number</label>
+                                <input type="tel" id="contact" name="contact_number">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email">
+                            </div>
+                            <button type="submit" class="btn-submit">Add Responder</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Duty Schedule Modal -->
+                <div id="duty-schedule-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3>Schedule Duty</h3>
+                        <form id="duty-schedule-form">
+                            <div class="form-group">
+                                <label for="schedule-department">Department</label>
+                                <select id="schedule-department" name="department_id" required>
+                                    <option value="">Select Department</option>
+                                    <option value="1">PNP</option>
+                                    <option value="2">BFP</option>
+                                    <option value="3">EMS</option>
+                                    <option value="4">MDRRMO</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="schedule-responder">Responder</label>
+                                <select id="schedule-responder" name="responder_id" required>
+                                    <option value="">Select Responder</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="duty-date">Date</label>
+                                <input type="date" id="duty-date" name="duty_date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="shift">Shift</label>
+                                <select id="shift" name="shift" required>
+                                    <option value="morning">Morning</option>
+                                    <option value="afternoon">Afternoon</option>
+                                    <option value="night">Night</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="notes">Notes</label>
+                                <textarea id="notes" name="notes"></textarea>
+                            </div>
+                            <button type="submit" class="btn-submit">Schedule Duty</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Report Generation Modal -->
+                <div id="report-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3>Generate Report</h3>
+                        <form id="report-form">
+                            <div class="form-group">
+                                <label for="report-department">Department</label>
+                                <select id="report-department" name="department_id" required>
+                                    <option value="">Select Department</option>
+                                    <option value="1">PNP</option>
+                                    <option value="2">BFP</option>
+                                    <option value="3">EMS</option>
+                                    <option value="4">MDRRMO</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="report-type">Report Type</label>
+                                <select id="report-type" name="report_type" required>
+                                    <option value="daily">Daily Report</option>
+                                    <option value="weekly">Weekly Report</option>
+                                    <option value="monthly">Monthly Report</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="report-date">Date</label>
+                                <input type="date" id="report-date" name="report_date" required>
+                            </div>
+                            <button type="submit" class="btn-submit">Generate Report</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Details Modal -->
+    <div id="emergency-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="emergency-details">
+                <!-- Emergency details will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Route Modal -->
+    <div id="route-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="route-details">
+                <div id="route-map"></div>
+                <div class="route-info">
+                    <!-- Route information will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="/static/admin-script.js"></script>
+</body>
+</html>
