@@ -113,4 +113,7 @@ The application will be available at:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+# emergapp-backend
+pang thesis to oto
